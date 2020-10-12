@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg1"
+        android:src="@drawable/top_bar_left_back" />
+
+    <TextView
+        android:id="@+id/edit_number"
+        android:gravity="center"
+        android:layout_weight="1"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:text="字数"
+        android:textSize="20sp" />
+
+    <ImageButton
+        android:id="@+id/edit_btn_pre"
+        android:layout_width="50dp"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg1"
+        android:src="@drawable/btn_pre" />
+
+    <ImageButton
+        android:id="@+id/edit_btn_next"
+        android:layout_width="50dp"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg1"
+        android:src="@drawable/btn_next" />
+
+    <Button
+        android:id="@+id/edit_save"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:text="保存" />
+
+    <Button
+        android:id="@+id/edit_delete"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:text="删除" />
+
+</LinearLayout>

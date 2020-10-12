@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">小说编辑器</string>
+    <string name="ReturnRootDir">返回根目录</string>
+    <string name="ReturnPreDir">返回上层目录</string>
+    <string name="cancel">取消</string>
+    <string name="sure">确定</string>
+    <string name="btn_default">默认存储</string>
+    <string name="btn_inside">手机内部存储</string>
+    <string name="btn_sdcard">Sdcard存储</string>
+    <string name="current_location">当前存储位置：</string>
+    <string name="clear_book">删除书籍</string>
+    <string name="replace_icon">更换封面</string>
+    <string name="chapter_name">章节名称（请使用数字如：第1章）</string>
+    <string name="chapter_content">小说内容</string>
+</resources>
