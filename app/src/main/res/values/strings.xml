@@ -12,4 +12,6 @@
     <string name="replace_icon">更换封面</string>
     <string name="chapter_name">章节名称（请使用数字如：第1章）</string>
     <string name="chapter_content">小说内容</string>
+    <string name="pop_savepath">设置保存位置</string>
+    <string name="edit_numbers">字数: 0</string>
 </resources>

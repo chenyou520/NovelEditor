@@ -92,7 +92,7 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
         String nameNoEx = getFileNameNoEx(file.getName());
         viewHolder.chapter_name.setText(nameNoEx);
         int words = analysis(file);
-        viewHolder.chapter_number_words.setText("字数："+words);
+        viewHolder.chapter_number_words.setText("字数：" + words);
         return convertView;
     }
 
@@ -138,9 +138,9 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
 
         //弹出删除对话框
         new AlertDialog.Builder(context)
-                .setTitle("删除章节")
-                .setMessage("是否删除章节：" + nameNoEx)
-                .setPositiveButton("确定删除", new DialogInterface.OnClickListener() {
+                .setTitle("是否将该章节移入回收站？")
+                .setMessage("移除章节：" + nameNoEx)
+                .setPositiveButton("确定移除", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         //读取章节内容
@@ -155,7 +155,7 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
                         getFileDir(bookPath);
                     }
                 })
-                .setNegativeButton("取消删除", null)
+                .setNegativeButton("取消移除", null)
                 .setCancelable(false)
                 .create()
                 .show();

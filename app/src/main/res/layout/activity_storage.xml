@@ -11,9 +11,9 @@
         android:id="@+id/str_ibtn_back"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/ic_bg"
+        android:background="@null"
         android:padding="10dp"
-        android:src="@drawable/top_bar_left_back" />
+        android:src="@drawable/ct_arrow_back" />
 
     <Button
         android:id="@+id/btn_default"
