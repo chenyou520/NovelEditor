@@ -7,20 +7,27 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.chenyou.noveleditor.R;
+import com.chenyou.noveleditor.pager.SetPopoWindow;
 import com.chenyou.noveleditor.utils.PerformEdit;
 
 import java.io.BufferedReader;
@@ -48,6 +55,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private File old_file;//旧章节
     private PerformEdit performEdit;//用于撤销和恢复的类
 
+    private LinearLayout editMainll;
     private ImageButton etitTopBarBack;//标题返回按钮
     private TextView editNumber;//字数统计
     private ImageButton editBtnPre;//撤销返回
@@ -55,6 +63,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private LinearLayout editTopBar;//顶部标题布局
     private EditText editName;//章节名称
     private EditText editContent;//章节内容
+    private ScrollView editScrollview;//包裹章节标题和内容的可滚动布局
     private LinearLayout editBottomBar;//底部标题
     private ImageButton editBottomDelete;//删除章节内容
     private ImageButton editBottomSetting;//设置
@@ -62,6 +71,11 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private int intlength;//章节内容实时字数
     private String chaptercontent;//章节内容
     private int words;//获取的章节文件内容字数
+
+    private int mScreenWidth;//屏幕宽
+    private int mScreenHeight;//屏幕高
+    private boolean mDrak = false;
+    private SharedPreferences shared = null;
 
     @SuppressLint("HandlerLeak")
     private Handler handler = new Handler() {
@@ -78,12 +92,23 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         }
     };
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit);
+        shared = getSharedPreferences("setdata", MODE_PRIVATE);
+
         findViews();
         initData();
+
+        //获取屏幕宽高
+        WindowManager manager = this.getWindowManager();
+        DisplayMetrics metrics = new DisplayMetrics();
+        manager.getDefaultDisplay().getMetrics(metrics);
+        mScreenWidth = metrics.widthPixels;
+        mScreenHeight = metrics.heightPixels;
+
         handler.sendEmptyMessage(AUTO_SAVE);
     }
 
@@ -91,6 +116,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
      * 初始化布局和动作监听
      */
     private void findViews() {
+        editMainll = (LinearLayout) findViewById(R.id.edit_main_ll);
         etitTopBarBack = (ImageButton) findViewById(R.id.etit_top_bar_back);
         editNumber = (TextView) findViewById(R.id.edit_number);
         editBtnPre = (ImageButton) findViewById(R.id.edit_btn_pre);
@@ -102,6 +128,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         editBottomDelete = (ImageButton) findViewById(R.id.edit_bottom_delete);
         editBottomSetting = (ImageButton) findViewById(R.id.edit_bottom_setting);
         editBottomLocation = (ImageButton) findViewById(R.id.edit_bottom_location);
+        editScrollview = (ScrollView) findViewById(R.id.edit_scrollview);
 
         etitTopBarBack.setOnClickListener(this);
         editBtnPre.setOnClickListener(this);
@@ -127,6 +154,12 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
             }
         };
 
+        //初始化字体大小
+        float fontSize = shared.getFloat("fontSize", 16);
+        setFontsize(fontSize);
+        //初始化背景颜色
+        int mNowPick = shared.getInt("mNowPick", R.id.edit_set_rb_whitle);
+        setChangeBackgound(mNowPick);
         //打开存在的章节
         openChapter();
 
@@ -153,12 +186,39 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
             redoAction();
         } else if (v == editBottomDelete) {//删除内容
             // Handle clicks for editBottomDelete
+            deleteEditcontent();
         } else if (v == editBottomSetting) {//设置
             // Handle clicks for editBottomSetting
+            settings();
         } else if (v == editBottomLocation) {//定位到最底部
             // Handle clicks for editBottomLocation
             setLocation();
         }
+    }
+
+    /**
+     * 设置功能
+     */
+    private void settings() {
+        SetPopoWindow popuWindow = new SetPopoWindow(this, mScreenWidth - 20, WindowManager.LayoutParams.WRAP_CONTENT);
+        popuWindow.showAtLocation(editMainll, Gravity.BOTTOM | Gravity.CENTER, 0, 20);
+        popuWindow.setCallback(new SetPopoWindow.CallBack() {
+            @Override
+            public void setLight(int light) {
+                setLightness(light);
+            }
+
+            @Override
+            public void setFontSize(float font, int index) {
+                setFontsize(font);
+            }
+
+            @Override
+            public void changeBackgound(int id) {
+                setChangeBackgound(id);
+            }
+        });
+
     }
 
     /**
@@ -274,8 +334,9 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
                 intlength = s.length();
                 editNumber.setText("字数：" + intlength);//显示实时字数统计
 
-                //变更撤销和恢复图片
+                //变更撤销图片
                 editBtnPre.setImageDrawable(getResources().getDrawable(R.drawable.edit_chapter_undo));
+                //判断是否可恢复，不可恢复变更图片为白色
                 if (!performEdit.isRedoflag()) {
                     editBtnNext.setImageDrawable(getResources().getDrawable(R.drawable.edit_chapter_redo_dark));
                 }
@@ -561,6 +622,78 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onPointerCaptureChanged(boolean hasCapture) {
+
+    }
+
+
+    /**
+     * 设置亮度120-255
+     * 该方法仅对当前应用屏幕亮度生效
+     *
+     * @param light
+     */
+    public void setLightness(float light) {
+        Window window = getWindow();
+        WindowManager.LayoutParams layoutParams = window.getAttributes();
+        layoutParams.screenBrightness = light;
+        window.setAttributes(layoutParams);
+    }
+
+    /**
+     * 设置字体大小
+     *
+     * @param font
+     */
+    public void setFontsize(float font) {
+        editName.setTextSize(font);
+        editContent.setTextSize(font);
+    }
+
+    /**
+     * 设置背景颜色
+     *
+     * @param id
+     */
+    public void setChangeBackgound(int id) {
+        switch (id) {
+            case R.id.edit_set_rb_whitle:
+                setBackgroundColor(getResources().getColor(R.color.rg_white), getResources().getColor(R.color.rg_white), false);
+                break;
+            case R.id.edit_set_rb_pink:
+                setBackgroundColor(getResources().getColor(R.color.rg_pink), getResources().getColor(R.color.rg_pink_less), false);
+                break;
+            case R.id.edit_set_rb_yellow:
+                setBackgroundColor(getResources().getColor(R.color.rg_yellow), getResources().getColor(R.color.rg_yellow_less), false);
+                break;
+            case R.id.edit_set_rb_green:
+                setBackgroundColor(getResources().getColor(R.color.rg_green), getResources().getColor(R.color.rg_green_less), false);
+                break;
+            case R.id.edit_set_rb_blue:
+                setBackgroundColor(getResources().getColor(R.color.rg_blue), getResources().getColor(R.color.rg_blue_less), false);
+                break;
+            case R.id.edit_set_rb_black:
+                setBackgroundColor(getResources().getColor(R.color.rg_black), getResources().getColor(R.color.rg_black_less), true);
+                break;
+        }
+    }
+
+    /**
+     * 设置背景颜色
+     *
+     * @param mianColor
+     * @param titleColor
+     * @param black
+     */
+    private void setBackgroundColor(int mianColor, int titleColor, boolean black) {
+        if (black) {//黑色模式
+            editScrollview.setBackgroundColor(mianColor);
+            editName.setTextColor(getResources().getColor(R.color.white));
+            editContent.setTextColor(getResources().getColor(R.color.white));
+        } else {
+            editScrollview.setBackgroundColor(mianColor);
+            editName.setTextColor(getResources().getColor(R.color.black));
+            editContent.setTextColor(getResources().getColor(R.color.black));
+        }
 
     }
 }

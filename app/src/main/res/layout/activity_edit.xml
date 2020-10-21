@@ -5,11 +5,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:id="@+id/edit_main_ll"
     tools:context=".activity.EditActivity">
 
     <include layout="@layout/edit_top_actionbar" />
 
     <ScrollView
+        android:id="@+id/edit_scrollview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
@@ -47,7 +49,6 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginBottom="5dp"
         android:background="@color/near_black" />
 
     <include layout="@layout/edit_bottom_bar" />

@@ -24,4 +24,18 @@
         <item name="textAllCaps">false</item>
     </style>
 
+    <!--设置的颜色设置风格-->
+    <style name="bottom_tab_style">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:button">@null</item>
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+
+    <style name="setting_popu_anim" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/anim_pupowindow_enter</item>
+        <item name="android:windowExitAnimation">@anim/anim_pupowindow_exit</item>
+    </style>
 </resources>

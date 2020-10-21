@@ -8,10 +8,10 @@
     <color name="near_black">#3b3b3b</color>
     <color name="greyC">#cccccc</color>
     <color name="grey9">#999999</color>
-    <color name="white">#ffffff</color>
     <color name="near_white">#f3f3f3</color>
-
+    <color name="white">#FFFFFF</color>
     <color name="cover">#66000000</color>
+    <color name="alpha">#4A4A4A</color>
 
     <color name="q">#19CAAD</color>
     <color name="w">#8CC7B5</color>
@@ -23,4 +23,21 @@
     <color name="i">#E6CEAC</color>
     <color name="o">#ECAD9E</color>
     <color name="p">#F4606C</color>
+
+
+    <color name="divide_color">#e0e0e0</color>
+
+    <!--编辑页面的设置背景颜色-->
+    <color name="rg_white">#FFFFFF</color>
+    <color name="rg_pink">#FFDBDB</color>
+    <color name="rg_pink_less">#FFF0F5</color>
+    <color name="rg_yellow">#FFECC4</color>
+    <color name="rg_yellow_less">#FFFFF0</color>
+    <color name="rg_green">#C4E4C0</color>
+    <color name="rg_green_less">#F5FFFA</color>
+    <color name="rg_blue">#C6DBF2</color>
+    <color name="rg_blue_less">#F0FFFF</color>
+    <color name="rg_black">#42474E</color>
+    <color name="rg_black_less">#696969</color>
+
 </resources>

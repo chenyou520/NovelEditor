@@ -14,6 +14,7 @@
         android:background="@drawable/bt_shape"
         android:text="5s"
         android:textSize="20sp"
+        android:textColor="@color/near_black"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         />
