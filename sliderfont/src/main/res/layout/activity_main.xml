@@ -22,6 +22,13 @@
         android:layout_height="wrap_content"
         android:text="自定义底部弹窗" />
 
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/button"
+        android:text="打开系统文件选择器" />
+
     <com.chenyou.sliderfont.SliderFont1
         android:id="@+id/slider"
         android:layout_width="match_parent"

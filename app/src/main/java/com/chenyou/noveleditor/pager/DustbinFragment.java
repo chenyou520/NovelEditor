@@ -58,7 +58,7 @@ public class DustbinFragment extends BaseFragment {
             dustbinReceiver = new DustbinReceiver();
             IntentFilter filter = new IntentFilter("dustbin");
             context.registerReceiver(dustbinReceiver, filter);
-            Toast.makeText(context, "注册dustbin广播接收器", Toast.LENGTH_SHORT).show();
+//            Toast.makeText(context, "注册dustbin广播接收器", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -66,7 +66,7 @@ public class DustbinFragment extends BaseFragment {
         if (dustbinReceiver != null) {
             context.unregisterReceiver(dustbinReceiver);
             dustbinReceiver = null;
-            Toast.makeText(context, "解注册dustbin广播接收器", Toast.LENGTH_SHORT).show();
+//            Toast.makeText(context, "解注册dustbin广播接收器", Toast.LENGTH_SHORT).show();
         }
     }
 

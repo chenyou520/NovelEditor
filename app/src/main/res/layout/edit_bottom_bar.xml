@@ -4,7 +4,16 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingTop="5dp"
+    android:background="@color/near_white"
     android:orientation="horizontal">
+
+    <ImageButton
+        android:id="@+id/edit_bottom_typeset"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@null"
+        android:src="@drawable/preview_under_bar_typeset_select" />
 
     <ImageButton
         android:id="@+id/edit_bottom_delete"

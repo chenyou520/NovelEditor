@@ -14,4 +14,9 @@
     <string name="chapter_content">小说内容</string>
     <string name="pop_savepath">设置保存位置</string>
     <string name="edit_numbers">字数: 0</string>
+
+    <string name="it_all">全选</string>
+    <string name="it_copy">复制</string>
+    <string name="it_cut">剪切</string>
+    <string name="it_paste">粘贴</string>
 </resources>

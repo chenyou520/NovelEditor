@@ -239,6 +239,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String bookName = editText.getText().toString();
         String bookDate = utils.getTime();
         String bookPath = filePath + "/" + editText.getText().toString();
+
+        System.out.println("filePath："+bookPath);
+        System.out.println("书名路径："+bookPath);
         String bookIcon = null;
         String bookNewchapter = null;
 

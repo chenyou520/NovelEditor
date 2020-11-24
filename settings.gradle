@@ -1,2 +1,2 @@
-include ':app', ':sliderfont'
+include ':app', ':sliderfont',  ':promptview', ':popuwindrow', ':textselectmodetest'
 rootProject.name='NovelEditor'

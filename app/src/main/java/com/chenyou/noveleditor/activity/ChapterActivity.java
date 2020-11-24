@@ -25,7 +25,21 @@ import com.chenyou.noveleditor.pager.ChapterListFragment;
 import com.chenyou.noveleditor.pager.DustbinFragment;
 import com.google.android.material.tabs.TabLayout;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 public class ChapterActivity extends AppCompatActivity implements TabLayout.BaseOnTabSelectedListener {
 
@@ -48,6 +62,8 @@ public class ChapterActivity extends AppCompatActivity implements TabLayout.Base
             "章节目录", "回收站"
     };
     private String filepath;
+    private List<File> chapters;
+    private String bookname;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,7 +90,7 @@ public class ChapterActivity extends AppCompatActivity implements TabLayout.Base
      */
     private void initData() {
         //设置标题栏的名字为书名
-        String bookname = getIntent.getStringExtra("bookname");
+        bookname = getIntent.getStringExtra("bookname");
         chapter_bookname.setText(bookname);
 
         //书籍保存路径
@@ -130,7 +146,29 @@ public class ChapterActivity extends AppCompatActivity implements TabLayout.Base
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.full_export:
+            case R.id.full_export://全文导出
+                chapters = getFileDir(filepath);
+                File fullexport = new File(filepath + "/全文导出");
+                if (!fullexport.exists()) {
+                    fullexport.mkdirs();
+                }
+                File bookfile = new File(fullexport.getPath() + "/" + bookname + ".txt");
+                try {
+                    String str = "";
+                    if (!bookfile.exists()) {
+                        bookfile.createNewFile();
+                    }
+                    for (int i = 0; i < chapters.size(); i++) {
+                        File file = chapters.get(i);
+                        String nameNoEx = getFileNameNoEx(file.getName());
+                        String content = readTxtToFile(file);
+                        str +=nameNoEx + "\n" + content + "\n"+"\n";
+                        writeTxtToFile(bookfile, str);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                Toast.makeText(ChapterActivity.this,"已导出全文",Toast.LENGTH_SHORT).show();
                 break;
             case R.id.menu_new_chapter://新建章节
                 //跳转到编辑页面
@@ -142,6 +180,109 @@ public class ChapterActivity extends AppCompatActivity implements TabLayout.Base
                 break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+
+    /**
+     * 写入保存章节
+     *
+     * @param file
+     */
+    private void writeTxtToFile(File file, String chaptercontent) {
+        //章节内容
+        FileOutputStream fileOutputStream;
+        BufferedWriter bufferedWriter;
+        try {
+            fileOutputStream = new FileOutputStream(file);
+            bufferedWriter = new BufferedWriter(new OutputStreamWriter(fileOutputStream, "utf-8"));//将输入流写入缓存,指定格式为 "utf-8"
+            bufferedWriter.write(chaptercontent);//写入内容
+            bufferedWriter.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 获取所有章节
+     *
+     * @param bookPath
+     */
+    public List<File> getFileDir(String bookPath) {
+        final File file = new File(bookPath);
+        //判断是否是章节文件，并且后缀为: .txt
+        File[] files = file.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                if (pathname.isDirectory()) {//过滤掉文件夹
+                    return false;
+                }
+                if (pathname.isFile() && file.getName().endsWith(".txt")) {
+                    return pathname.getName().endsWith(".txt");
+                }
+                return true;
+            }
+        });
+        //将所有章节文件添加到fileList中new ArrayList<>(Arrays.asList(otherUserFromArray));
+        assert files != null;
+        List<File> chapters = new ArrayList<>(Arrays.asList(files));
+        //排序
+        Collections.sort(chapters, new Comparator<File>() {
+            @Override
+            public int compare(File o1, File o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+        return chapters;
+    }
+
+    /**
+     * 读取章节文件
+     *
+     * @param file
+     * @return
+     */
+    private String readTxtToFile(File file) {
+        FileInputStream fileInputStream;
+        BufferedReader bufferedReader;
+        StringBuilder stringBuilder = new StringBuilder();
+        if (!file.exists()) {
+            return null;
+        } else {
+            try {
+                fileInputStream = new FileInputStream(file);
+                bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream, "utf-8"));//指定格式为 "utf-8"
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(line);
+                }
+                bufferedReader.close();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                return null;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+        return stringBuilder.toString();
+    }
+
+    /**
+     * 去除后缀
+     *
+     * @param filename
+     * @return
+     */
+    private String getFileNameNoEx(String filename) {
+        if ((filename != null) && (filename.length() > 0)) {
+            int dot = filename.lastIndexOf('.');
+            if ((dot > -1) && (dot < (filename.length()))) {
+                return filename.substring(0, dot);
+            }
+        }
+        return filename;
     }
 
     @Override
@@ -162,6 +303,7 @@ public class ChapterActivity extends AppCompatActivity implements TabLayout.Base
 
     /**
      * 当Tab的item被选中时
+     *
      * @param tab
      */
     @Override

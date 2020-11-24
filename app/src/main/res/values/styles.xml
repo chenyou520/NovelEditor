@@ -33,6 +33,13 @@
         <item name="android:background">@android:color/transparent</item>
     </style>
 
+    <!--设置字体的样式-->
+    <style name="fontsize">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textSize">15sp</item>
+    </style>
 
     <style name="setting_popu_anim" parent="android:Animation">
         <item name="android:windowEnterAnimation">@anim/anim_pupowindow_enter</item>

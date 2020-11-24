@@ -18,16 +18,17 @@ import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.chenyou.noveleditor.R;
-import com.chenyou.noveleditor.pager.SetPopoWindow;
+import com.chenyou.noveleditor.pager.SetPopuWindow;
 import com.chenyou.noveleditor.utils.PerformEdit;
 
 import java.io.BufferedReader;
@@ -39,6 +40,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * 编辑页面
@@ -55,6 +59,12 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private File old_file;//旧章节
     private PerformEdit performEdit;//用于撤销和恢复的类
 
+    private LinearLayout llPlace;//替换布局
+    private EditText edSearch;//搜索框
+    private Button btnReplace;//替换按钮
+    private EditText edReplace;//替换框
+    private Button btnAllreplace;//替换所有按钮
+    private Button btnExc;//取消按钮
     private LinearLayout editMainll;
     private ImageButton etitTopBarBack;//标题返回按钮
     private TextView editNumber;//字数统计
@@ -63,18 +73,19 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private LinearLayout editTopBar;//顶部标题布局
     private EditText editName;//章节名称
     private EditText editContent;//章节内容
+    private Button findAndReplace;//查找/替换
     private ScrollView editScrollview;//包裹章节标题和内容的可滚动布局
     private LinearLayout editBottomBar;//底部标题
+    private ImageButton editBottomTypeset;//排版
     private ImageButton editBottomDelete;//删除章节内容
     private ImageButton editBottomSetting;//设置
     private ImageButton editBottomLocation;//定位到最底部
     private int intlength;//章节内容实时字数
     private String chaptercontent;//章节内容
     private int words;//获取的章节文件内容字数
-
+    private int height;//底部标题栏高度
     private int mScreenWidth;//屏幕宽
-    private int mScreenHeight;//屏幕高
-    private boolean mDrak = false;
+
     private SharedPreferences shared = null;
 
     @SuppressLint("HandlerLeak")
@@ -92,24 +103,35 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         }
     };
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit);
         shared = getSharedPreferences("setdata", MODE_PRIVATE);
-
         findViews();
         initData();
+        measured();
+        //自动保存
+        handler.sendEmptyMessage(AUTO_SAVE);
+    }
 
+    /**
+     * 测量
+     */
+    private void measured() {
         //获取屏幕宽高
         WindowManager manager = this.getWindowManager();
         DisplayMetrics metrics = new DisplayMetrics();
         manager.getDefaultDisplay().getMetrics(metrics);
-        mScreenWidth = metrics.widthPixels;
-        mScreenHeight = metrics.heightPixels;
+        mScreenWidth = metrics.widthPixels;//屏幕宽
 
-        handler.sendEmptyMessage(AUTO_SAVE);
+        //获取底部标题栏的高度
+        editBottomBar.post(new Runnable() {
+            @Override
+            public void run() {
+                height = editBottomBar.getMeasuredHeight();
+            }
+        });
     }
 
     /**
@@ -129,14 +151,26 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         editBottomSetting = (ImageButton) findViewById(R.id.edit_bottom_setting);
         editBottomLocation = (ImageButton) findViewById(R.id.edit_bottom_location);
         editScrollview = (ScrollView) findViewById(R.id.edit_scrollview);
+        findAndReplace = (Button) findViewById(R.id.find_and_replace);
+        editBottomTypeset = (ImageButton) findViewById(R.id.edit_bottom_typeset);
+        llPlace = (LinearLayout) findViewById(R.id.ll_place);
+        edSearch = (EditText) findViewById(R.id.ed_search);
+        btnReplace = (Button) findViewById(R.id.btn_replace);
+        edReplace = (EditText) findViewById(R.id.ed_replace);
+        btnAllreplace = (Button) findViewById(R.id.btn_allreplace);
+        btnExc = (Button) findViewById(R.id.btn_exc);
 
+        btnReplace.setOnClickListener(this);
+        btnAllreplace.setOnClickListener(this);
+        btnExc.setOnClickListener(this);
         etitTopBarBack.setOnClickListener(this);
         editBtnPre.setOnClickListener(this);
         editBtnNext.setOnClickListener(this);
         editBottomDelete.setOnClickListener(this);
         editBottomSetting.setOnClickListener(this);
         editBottomLocation.setOnClickListener(this);
-
+        findAndReplace.setOnClickListener(this);
+        editBottomTypeset.setOnClickListener(this);
     }
 
     /**
@@ -155,7 +189,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         };
 
         //初始化字体大小
-        float fontSize = shared.getFloat("fontSize", 16);
+        int fontSize = shared.getInt("fonesize", R.id.default_size);
         setFontsize(fontSize);
         //初始化背景颜色
         int mNowPick = shared.getInt("mNowPick", R.id.edit_set_rb_whitle);
@@ -165,6 +199,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
 
         //章节内容改变监听，内含自动计数和设置撤销操作动作
         editcontChanged();
+        editContent.setOnKeyListener(new MyOnKeyListener());
     }
 
     /**
@@ -175,41 +210,83 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         if (v == etitTopBarBack) {//返回按钮
-            // Handle clicks for etitTopBarBack
             autoupdateMessage();//自动保存信息
             finish();
+        } else if (v == findAndReplace) {//替换
+            llPlace.setVisibility(View.VISIBLE);
+            editTopBar.setVisibility(View.GONE);
         } else if (v == editBtnPre) {//撤销
-            // Handle clicks for editBtnPre
             undoAction();
         } else if (v == editBtnNext) {//恢复
-            // Handle clicks for editBtnNext
             redoAction();
+        } else if (v == editBottomTypeset) {//排版
+            typeSetting();
         } else if (v == editBottomDelete) {//删除内容
-            // Handle clicks for editBottomDelete
             deleteEditcontent();
         } else if (v == editBottomSetting) {//设置
-            // Handle clicks for editBottomSetting
             settings();
         } else if (v == editBottomLocation) {//定位到最底部
-            // Handle clicks for editBottomLocation
             setLocation();
+        } else if (v == btnReplace) {//替换
+            replace();
+        } else if (v == btnAllreplace) {//替换所有
+            allReplace();
+        } else if (v == btnExc) {//取消
+            editTopBar.setVisibility(View.VISIBLE);
+            llPlace.setVisibility(View.GONE);
         }
+    }
+
+    /**
+     * 全部替换
+     */
+    private void allReplace() {
+        String keyword = edSearch.getText().toString();//关键字
+        String replaceword = edReplace.getText().toString();
+        String s = editContent.getText().toString();
+        s = s.replaceAll(keyword, replaceword);
+        editContent.setText(s);
+    }
+
+    /**
+     * 替换
+     */
+    private void replace() {
+        String keyword = edSearch.getText().toString();//关键字
+        String replaceword = edReplace.getText().toString();
+        String s = editContent.getText().toString();
+        int index = s.indexOf(keyword);
+        s = s.replaceFirst(keyword, replaceword);
+        if (index != 0) {
+            int end = index + keyword.length();
+            editContent.setSelection(index, end);
+        }
+        editContent.setText(s);
+    }
+
+    /**
+     * 排版
+     *
+     * @param
+     */
+    private void typeSetting() {
+        //去除字符串中的所有空格
+        String str =editContent.getText().toString();
+        String str2 = str.replaceAll(" ", "");
+        str2 =str2.replaceAll("(?m)^\\s*$(\\n|\\r\\n)", "");
+        str2 =str2.replaceAll("\r\n", "\r\n    ");
+        editContent.setText("    "+str2);
     }
 
     /**
      * 设置功能
      */
     private void settings() {
-        SetPopoWindow popuWindow = new SetPopoWindow(this, mScreenWidth - 20, WindowManager.LayoutParams.WRAP_CONTENT);
-        popuWindow.showAtLocation(editMainll, Gravity.BOTTOM | Gravity.CENTER, 0, 20);
-        popuWindow.setCallback(new SetPopoWindow.CallBack() {
+        SetPopuWindow popuWindow = new SetPopuWindow(this, mScreenWidth - 10, WindowManager.LayoutParams.WRAP_CONTENT);
+        popuWindow.showAtLocation(editMainll, Gravity.BOTTOM | Gravity.CENTER, 0, height);
+        popuWindow.setCallback(new SetPopuWindow.CallBack() {
             @Override
-            public void setLight(int light) {
-                setLightness(light);
-            }
-
-            @Override
-            public void setFontSize(float font, int index) {
+            public void setFontSize(int font) {
                 setFontsize(font);
             }
 
@@ -296,6 +373,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void editcontChanged() {
         editContent.addTextChangedListener(new TextWatcher() {
+
             /**
              * charSequence为在你按键之前显示的字符串
              * start为新字符串与charSequence开始出现差异的下标
@@ -331,7 +409,9 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
              */
             @Override
             public void afterTextChanged(Editable s) {
-                intlength = s.length();
+                String s1 = editContent.getText().toString();
+                String str = stringFilter(s1); //过滤特殊字符
+                intlength = s.length() - (s.length() - str.length());
                 editNumber.setText("字数：" + intlength);//显示实时字数统计
 
                 //变更撤销图片
@@ -342,6 +422,20 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         });
+    }
+
+    /**
+     * 屏蔽空格回车等特殊字符
+     *
+     * @param str
+     * @return
+     * @throws PatternSyntaxException
+     */
+    public static String stringFilter(String str) throws PatternSyntaxException {
+        String regEx = "[/\\:*?<>|\"\n\t\r\\s]";
+        Pattern p = Pattern.compile(regEx);
+        Matcher m = p.matcher(str);
+        return m.replaceAll("");
     }
 
     /**
@@ -387,7 +481,6 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private void writeTxtToFile(File file) {
         //章节内容
         String chaptercontent = editContent.getText().toString();
-        System.out.println(chaptercontent);
 
         FileOutputStream fileOutputStream;
         BufferedWriter bufferedWriter;
@@ -485,9 +578,9 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         switch (openMode) {
             case 0://新建章节
             default:
-                if (chaptername.length() == 0 && chaptercontent.length() == 0) {//没有标题，没有内容
+                if (chaptercontent.length() == 0) {//没内容
                     return;
-                } else if (chaptername.length() == 0 && chaptercontent.length() != 0) {
+                } else if (chaptername.length() == 0 && chaptercontent.length() != 0) {//有内容没标题
                     //弹出提示框添加标题
                     new AlertDialog.Builder(this)
                             .setMessage("标题不能为空")
@@ -552,7 +645,6 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
                             setResult(RESULT_OK, intent);
                         }
                     }
-
                 }
                 break;
         }
@@ -627,26 +719,34 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
 
 
     /**
-     * 设置亮度120-255
-     * 该方法仅对当前应用屏幕亮度生效
-     *
-     * @param light
-     */
-    public void setLightness(float light) {
-        Window window = getWindow();
-        WindowManager.LayoutParams layoutParams = window.getAttributes();
-        layoutParams.screenBrightness = light;
-        window.setAttributes(layoutParams);
-    }
-
-    /**
      * 设置字体大小
      *
-     * @param font
+     * @param fontid
      */
-    public void setFontsize(float font) {
-        editName.setTextSize(font);
-        editContent.setTextSize(font);
+    public void setFontsize(int fontid) {
+        switch (fontid) {
+            case R.id.small_size:
+                editName.setTextSize(16);
+                editContent.setTextSize(16);
+                break;
+            case R.id.medium_size:
+                editName.setTextSize(19);
+                editContent.setTextSize(19);
+                break;
+            case R.id.default_size:
+                editName.setTextSize(22);
+                editContent.setTextSize(22);
+                break;
+            case R.id.big_size:
+                editName.setTextSize(24);
+                editContent.setTextSize(24);
+                break;
+            case R.id.super_size:
+                editName.setTextSize(26);
+                editContent.setTextSize(26);
+                break;
+        }
+
     }
 
     /**
@@ -658,9 +758,6 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         switch (id) {
             case R.id.edit_set_rb_whitle:
                 setBackgroundColor(getResources().getColor(R.color.rg_white), getResources().getColor(R.color.rg_white), false);
-                break;
-            case R.id.edit_set_rb_pink:
-                setBackgroundColor(getResources().getColor(R.color.rg_pink), getResources().getColor(R.color.rg_pink_less), false);
                 break;
             case R.id.edit_set_rb_yellow:
                 setBackgroundColor(getResources().getColor(R.color.rg_yellow), getResources().getColor(R.color.rg_yellow_less), false);
@@ -695,5 +792,24 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
             editContent.setTextColor(getResources().getColor(R.color.black));
         }
 
+    }
+
+    /**
+     * enter键自动换行，并空自动空二格
+     */
+    private class MyOnKeyListener implements View.OnKeyListener {
+        @Override
+        public boolean onKey(View v, int keyCode, KeyEvent event) {
+            if (keyCode == KeyEvent.KEYCODE_ENTER) {
+                if ((event.getAction() == KeyEvent.ACTION_UP)) {
+                    int end = editContent.getSelectionEnd();
+                    Editable editableText = editContent.getEditableText();
+                    editableText.insert(end, "\r\n    ");
+                }
+                return true;
+            }
+            return false;
+
+        }
     }
 }
