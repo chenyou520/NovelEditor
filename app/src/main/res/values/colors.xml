@@ -1,39 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#008577</color>
+    <color name="backcolor">#0096FF</color>
+    <color name="bookcolor">#CC3AD1FF</color>
+    <color name="backblue">#3AD1FF</color>
     <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
-    <color name="fabColor1">#ffbbbb</color>
     <color name="black">#000000</color>
     <color name="near_black">#3b3b3b</color>
-    <color name="greyC">#cccccc</color>
     <color name="grey9">#999999</color>
     <color name="near_white">#f3f3f3</color>
     <color name="white">#FFFFFF</color>
-    <color name="cover">#66000000</color>
-    <color name="alpha">#4A4A4A</color>
-
-    <color name="q">#19CAAD</color>
-    <color name="w">#8CC7B5</color>
-    <color name="e">#A0EEE1</color>
-    <color name="r">#BEE7E9</color>
-    <color name="t">#BEEDC7</color>
-    <color name="y">#D6D5B7</color>
-    <color name="u">#D1BA74</color>
-    <color name="i">#E6CEAC</color>
-    <color name="o">#2AB8AA</color>
-    <color name="p">#53EBDC</color>
-    <color name="a">#525A66</color>
-    <color name="b">#CED2D9</color>
-
-
-    <color name="divide_color">#e0e0e0</color>
 
     <!--编辑页面的设置背景颜色-->
     <color name="rg_white">#FFFFFF</color>
-    <color name="rg_pink">#FFDBDB</color>
-    <color name="rg_pink_less">#FFF0F5</color>
-    <color name="rg_yellow">#FFECC4</color>
+     <color name="rg_yellow">#FFECC4</color>
     <color name="rg_yellow_less">#FFFFF0</color>
     <color name="rg_green">#C4E4C0</color>
     <color name="rg_green_less">#F5FFFA</color>

@@ -3,7 +3,7 @@
     android:id="@+id/edit_top_bar"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/q"
+    android:background="@color/backcolor"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:padding="8dp">
@@ -28,13 +28,14 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/edit_numbers"
-            android:textSize="20sp" />
+            android:textSize="20sp"
+            android:textColor="@color/black"/>
 
         <Button
             android:id="@+id/find_and_replace"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
+            android:background="@null"
             android:text="替换"
             android:textSize="20sp" />
 

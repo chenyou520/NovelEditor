@@ -21,6 +21,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * 设置文件保存位置
+ */
 public class StorageAdapter extends BaseAdapter implements View.OnClickListener, AdapterView.OnItemClickListener {
     private String rootPath;//根目录
     private LayoutInflater mInflater;//布局管理

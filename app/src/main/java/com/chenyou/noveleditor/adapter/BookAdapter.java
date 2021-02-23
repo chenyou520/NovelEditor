@@ -9,8 +9,12 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.chenyou.noveleditor.R;
 import com.chenyou.noveleditor.data.BookData;
+import com.chenyou.noveleditor.utils.BitmapUtils;
+import com.chenyou.noveleditor.utils.Utils;
+
 import java.util.List;
 
 public class BookAdapter extends BaseAdapter {
@@ -61,18 +65,19 @@ public class BookAdapter extends BaseAdapter {
         viewHolder.bookName.setText(bookData.getBookName());
         viewHolder.bookDate.setText(bookData.getBookDate());
 
-        if (bookData.getBookNewchapter() == null) {
-            viewHolder.bookNewchapter.setText("新建章节");
+
+        if (bookData.getBookNewchapter()!=null) {
+            viewHolder.bookNewchapter.setText("最新章节："+bookData.getBookNewchapter());
         } else {
-            viewHolder.bookNewchapter.setText("新建章节：" + bookData.getBookNewchapter());
+            viewHolder.bookNewchapter.setText("请新建章节");
         }
 
-        if (bookData.getBookIcon() == null) {//默认封面
-            viewHolder.bookIcon.setImageResource(R.drawable.add_pictrue);
-        } else {
-            //加载指定路径的图片
-                Bitmap bm = BitmapFactory.decodeFile(bookData.getBookIcon());
-                viewHolder.bookIcon.setImageBitmap(bm);
+
+        if (bookData.getBookIcon() != null) {//加载指定路径的图片
+            Bitmap bitmap = BitmapFactory.decodeFile(bookData.getBookIcon());
+            Glide.with(context).load(bitmap).centerCrop().into(viewHolder.bookIcon);
+        } else {//默认封面
+            Glide.with(context).load(R.drawable.add_pictrue).into(viewHolder.bookIcon);
         }
 
         return convertView;
@@ -84,7 +89,6 @@ public class BookAdapter extends BaseAdapter {
         TextView bookNewchapter;//最新章节
         TextView bookDate;//更新时间
     }
-
 
 
 }

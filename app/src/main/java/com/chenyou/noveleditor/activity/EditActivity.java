@@ -30,6 +30,7 @@ import android.widget.Toast;
 import com.chenyou.noveleditor.R;
 import com.chenyou.noveleditor.pager.SetPopuWindow;
 import com.chenyou.noveleditor.utils.PerformEdit;
+import com.chenyou.noveleditor.utils.Utils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -52,6 +53,8 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private static final int AUTO_SAVE = 1000;//自动保存标识
     private Intent getIntent;//从MainActivity获取消息
     private Intent intent = new Intent();//返回数据
+    private Intent intent2 = new Intent();//返回时间数据
+    private Utils utils = new Utils();
     private int openMode = 0;//编辑页面的入口请求码，mode=0则新建章节页面，mode=1则编辑章节页面
     private String old_chaptercontent = "";//读取的内容
     private String old_chaptername = "";//读取的标题
@@ -80,11 +83,13 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private ImageButton editBottomDelete;//删除章节内容
     private ImageButton editBottomSetting;//设置
     private ImageButton editBottomLocation;//定位到最底部
-    private int intlength;//章节内容实时字数
+    private int intlength;//章节内容实时字数（去除了特殊字符）
     private String chaptercontent;//章节内容
+    private int endLength;//章节内容更改后的总字数
     private int words;//获取的章节文件内容字数
     private int height;//底部标题栏高度
     private int mScreenWidth;//屏幕宽
+    private String time;//更新时间
 
     private SharedPreferences shared = null;
 
@@ -102,6 +107,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
             sendEmptyMessageDelayed(AUTO_SAVE, 10000);//10秒自动保存一次
         }
     };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -196,7 +202,6 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         setChangeBackgound(mNowPick);
         //打开存在的章节
         openChapter();
-
         //章节内容改变监听，内含自动计数和设置撤销操作动作
         editcontChanged();
         editContent.setOnKeyListener(new MyOnKeyListener());
@@ -271,11 +276,11 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void typeSetting() {
         //去除字符串中的所有空格
-        String str =editContent.getText().toString();
+        String str = editContent.getText().toString();
         String str2 = str.replaceAll(" ", "");
-        str2 =str2.replaceAll("(?m)^\\s*$(\\n|\\r\\n)", "");
-        str2 =str2.replaceAll("\r\n", "\r\n    ");
-        editContent.setText("    "+str2);
+        str2 = str2.replaceAll("(?m)^\\s*$(\\n|\\r\\n)", "");
+        str2 = str2.replaceAll("\r\n", "\r\n    ");
+        editContent.setText("    " + str2);
     }
 
     /**
@@ -357,12 +362,11 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         editContent.setFocusableInTouchMode(true);
         editContent.requestFocus();
         editContent.findFocus();
+        //获取内容长度
+        int length = editContent.getText().length();
         //进行光标定位到内容末尾
-        if (!chaptercontent.equals(old_chaptercontent)) {
-            editContent.setSelection(intlength);
-        } else {
-            editContent.setSelection(words);
-        }
+        editContent.setSelection(length);
+
     }
 
 
@@ -380,7 +384,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
              * count表示原字符串的count个字符
              * after表示将会被after个字符替换
              * @param s 输入框中改变前的字符串信息
-             * @param start 输入框中改变前的字符串的起始位置
+             * @param start 输框中改变前的字符串的起始位置入
              * @param count 输入框中改变前后的字符串改变数量一般为0
              * @param after 输入框中改变后的字符串与起始位置的偏移量
              */
@@ -411,6 +415,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
             public void afterTextChanged(Editable s) {
                 String s1 = editContent.getText().toString();
                 String str = stringFilter(s1); //过滤特殊字符
+                endLength = s1.length();//总字数
                 intlength = s.length() - (s.length() - str.length());
                 editNumber.setText("字数：" + intlength);//显示实时字数统计
 
@@ -452,6 +457,11 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
             editContent.setText(old_chaptercontent);//显示内容
             editNumber.setText("字数：" + words);//显示字数
             performEdit.setDefultText(old_chaptercontent);//将内容设置为不可操作的初始值
+            //排除写入的错版
+            String string = editContent.getText().toString();
+            String str2 = string.replaceAll("    ", "\r\n    ");
+            editContent.setText("    " + str2);
+            typeSetting();//排版
         }
     }
 
@@ -741,10 +751,10 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
                 editName.setTextSize(24);
                 editContent.setTextSize(24);
                 break;
-            case R.id.super_size:
-                editName.setTextSize(26);
-                editContent.setTextSize(26);
-                break;
+//            case R.id.super_size:
+//                editName.setTextSize(26);
+//                editContent.setTextSize(26);
+//                break;
         }
 
     }

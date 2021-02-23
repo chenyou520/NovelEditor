@@ -56,10 +56,10 @@
                     style="@style/fontsize"
                     android:text="大" />
 
-                <RadioButton
-                    android:id="@+id/super_size"
-                    style="@style/fontsize"
-                    android:text="超大" />
+<!--                <RadioButton-->
+<!--                    android:id="@+id/super_size"-->
+<!--                    style="@style/fontsize"-->
+<!--                    android:text="超大" />-->
             </RadioGroup>
 
             <ImageView

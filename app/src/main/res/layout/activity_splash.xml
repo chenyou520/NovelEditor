@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/splash_bg"
+    android:background="@color/near_white"
     tools:context=".activity.SplashActivity">
 
     <Button
@@ -13,7 +13,7 @@
         android:id="@+id/splash_btn"
         android:background="@drawable/bt_shape"
         android:text="5s"
-        android:textSize="20sp"
+        android:textSize="15sp"
         android:textColor="@color/near_black"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -34,6 +34,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * 回收站
+ */
 public class DustbinAdapter extends BaseAdapter implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
 
     private String bookpath;//书籍目录路径

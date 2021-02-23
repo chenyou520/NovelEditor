@@ -126,12 +126,12 @@ public class SetPopuWindow extends PopupWindow {
                         mCallBack.setFontSize(fonesize);
                     }
                     break;
-                case R.id.super_size:
-                    fonesize = R.id.super_size;
-                    if (mCallBack != null) {
-                        mCallBack.setFontSize(fonesize);
-                    }
-                    break;
+//                case R.id.super_size:
+//                    fonesize = R.id.super_size;
+//                    if (mCallBack != null) {
+//                        mCallBack.setFontSize(fonesize);
+//                    }
+//                    break;
             }
             SharedPreferences.Editor edit = shared.edit();
             edit.putInt("fonesize", fonesize);

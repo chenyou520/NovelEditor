@@ -30,7 +30,7 @@ public class Utils {
      */
     public String getTime() {
         long time = System.currentTimeMillis();//long now = android.os.SystemClock.uptimeMillis();
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         Date d1 = new Date(time);
         String t1 = format.format(d1);
         return t1;

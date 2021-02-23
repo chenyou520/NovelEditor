@@ -7,7 +7,7 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <!--Status bar color-->
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorAccent">@color/black</item>
     </style>
 
     <style name="Base.AppTheme" parent="Theme.AppCompat.Light">

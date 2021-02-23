@@ -17,12 +17,14 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.util.Util;
 import com.chenyou.noveleditor.R;
 
 import com.chenyou.noveleditor.adapter.ViewPagerAdapter;
 import com.chenyou.noveleditor.base.BaseFragment;
 import com.chenyou.noveleditor.pager.ChapterListFragment;
 import com.chenyou.noveleditor.pager.DustbinFragment;
+import com.chenyou.noveleditor.utils.Utils;
 import com.google.android.material.tabs.TabLayout;
 
 import java.io.BufferedReader;
@@ -64,6 +66,8 @@ public class ChapterActivity extends AppCompatActivity implements TabLayout.Base
     private String filepath;
     private List<File> chapters;
     private String bookname;
+    private Utils utils = new Utils();
+    private String time;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,7 +106,6 @@ public class ChapterActivity extends AppCompatActivity implements TabLayout.Base
 
         viewPagerAdapter = new ViewPagerAdapter(getSupportFragmentManager(), fragments);
         chapter_viewpager.setAdapter(viewPagerAdapter);
-
         //tabLayout关联viewpager,默认自动刷新
         chapter_tabLayout.setupWithViewPager(chapter_viewpager);
         chapter_tabLayout.setTabMode(TabLayout.MODE_FIXED);
@@ -143,6 +146,13 @@ public class ChapterActivity extends AppCompatActivity implements TabLayout.Base
         return super.onCreateOptionsMenu(menu);
     }
 
+    /**
+     * 导出全文
+     * 新建章节
+     *
+     * @param item
+     * @return
+     */
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
@@ -162,17 +172,17 @@ public class ChapterActivity extends AppCompatActivity implements TabLayout.Base
                         File file = chapters.get(i);
                         String nameNoEx = getFileNameNoEx(file.getName());
                         String content = readTxtToFile(file);
-                        str +=nameNoEx + "\n" + content + "\n"+"\n";
+                        str += nameNoEx + "\n" + content + "\n" + "\n";
                         writeTxtToFile(bookfile, str);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                Toast.makeText(ChapterActivity.this,"已导出全文",Toast.LENGTH_SHORT).show();
+                Toast.makeText(ChapterActivity.this, "已导出全文", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.menu_new_chapter://新建章节
                 //跳转到编辑页面
-                System.out.println("filepath:" + filepath);
+//                System.out.println("filepath:" + filepath);
                 Intent intent = new Intent(ChapterActivity.this, EditActivity.class);
                 intent.putExtra("mode", 0);
                 intent.putExtra("chapterpath", filepath);
@@ -294,6 +304,7 @@ public class ChapterActivity extends AppCompatActivity implements TabLayout.Base
             setResult(RESULT_OK, intent);
         }
     }
+
 
     @Override
     protected void onResume() {

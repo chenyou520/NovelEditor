@@ -1,15 +1,23 @@
 package com.chenyou.noveleditor.activity;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -22,6 +30,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 import androidx.annotation.NonNull;
@@ -36,7 +45,10 @@ import com.chenyou.noveleditor.data.BookData;
 import com.chenyou.noveleditor.data.CRUD;
 import com.chenyou.noveleditor.utils.Utils;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -240,8 +252,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String bookDate = utils.getTime();
         String bookPath = filePath + "/" + editText.getText().toString();
 
-        System.out.println("filePath："+bookPath);
-        System.out.println("书名路径："+bookPath);
+        System.out.println("filePath：" + bookPath);
+        System.out.println("书名路径：" + bookPath);
         String bookIcon = null;
         String bookNewchapter = null;
 
@@ -463,41 +475,130 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         BookData bookData = bookDataList.get(itemposition);
+        bookData.setBookDate(utils.getTime());
         if (requestCode == BOOK_RESULT_CODE && resultCode == RESULT_OK && data != null) {//书籍点击
             //修改结果
             String newchapter = data.getExtras().getString("newchapter", "请创建新章节");
             bookData.setBookNewchapter(newchapter);
-            bookData.setBookDate(utils.getTime());
-            //更新书单中的书籍信息
-            CRUD op = new CRUD(context);
-            op.updateBook(bookData);
-            //刷新书籍列表
-            refreshBookListView();
-
-        } else if (requestCode == CAMERA && resultCode == RESULT_OK && data != null) {//相机
-            //获取图片对象
-            Bundle extras = data.getExtras();
-            //获取图片保存路径
-            String bookicon = (String) extras.get("data");
-            bookData.setBookIcon(bookicon);
-            //更新书单中的书籍信息
-            CRUD op = new CRUD(context);
-            op.updateBook(bookData);
-            //刷新书籍列表
-            refreshBookListView();
-
-        } else if (requestCode == PICTURE && resultCode == RESULT_OK && data != null) {//图库
-            Uri uri = data.getData();
-            if (utils.decodeUriAsBitmap(context, uri)) {
-                String pathResult = utils.getPath(context, uri);
-                bookData.setBookIcon(pathResult);
-                System.out.println("BookIcon:" + bookData.getBookIcon());
-                //更新书单中的书籍信息
-                CRUD op = new CRUD(context);
-                op.updateBook(bookData);
-                //刷新书籍列表
-                refreshBookListView();
-            }
         }
+        if (requestCode == CAMERA && resultCode == RESULT_OK && data != null) {//相机
+            //获取图片对象
+            Bundle bundle = data.getExtras();
+            String picPath = null;
+            if (bundle != null) {
+                Bitmap photo = (Bitmap) bundle.get("data");
+                File savePicInLocal = SavePicInLocal(photo);
+                picPath = savePicInLocal.getPath();
+                if (photo != null && !photo.isRecycled()) {
+                    photo.recycle();
+                    photo = null;
+                }
+            } else {
+                Toast.makeText(MainActivity.this,
+                        "未拍摄照片", Toast.LENGTH_LONG).show();
+            }
+            bookData.setBookIcon(picPath);
+        }
+
+        if (requestCode == PICTURE && resultCode == RESULT_OK && data != null) {//图库
+            //android各个不同的系统版本,对于获取外部存储上的资源，返回的Uri对象都可能各不一样,
+            // 所以要保证无论是哪个系统版本都能正确获取到图片资源的话就需要针对各种情况进行一个处理了
+            //这里返回的uri情况就有点多了
+            //在4.4.2之前返回的uri是:content://media/external/images/media/3951或者file://....
+            // 在4.4.2返回的是content://com.android.providers.media.documents/document/image
+            //存储--->内存
+            //TODO 设置读写权限
+            if (Build.VERSION.SDK_INT >= 23) {
+                int REQUEST_CODE_CONTACT = 101;
+                String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
+                //验证是否许可权限
+                for (String str : permissions) {
+                    if (this.checkSelfPermission(str) != PackageManager.PERMISSION_GRANTED) {
+                        //申请权限
+                        this.requestPermissions(permissions, REQUEST_CODE_CONTACT);
+                    }
+                }
+            }
+            Uri originalUri = data.getData();//得到图片的URI
+            String[] imgs = {MediaStore.Images.Media.DATA};//将图片URI转换成存储路径
+            Cursor cursor = this.managedQuery(originalUri, imgs, null, null, null);
+            int index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            String pathResult = cursor.getString(index);
+            bookData.setBookIcon(pathResult);
+        }
+
+        //更新书单中的书籍信息
+        CRUD op = new CRUD(context);
+        op.updateBook(bookData);
+        //刷新书籍列表
+        refreshBookListView();
     }
+
+    /**
+     * 保存拍摄的照片到手机的sd卡
+     */
+    private File SavePicInLocal(Bitmap bitmap) {
+        FileOutputStream fos = null;
+        BufferedOutputStream bos = null;
+        ByteArrayOutputStream baos = null; // 字节数组输出流
+        File file = null;
+        try {
+            baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+
+            byte[] byteArray = baos.toByteArray();// 字节数组输出流转换成字节数组
+            // Log.i("geek", "本地的raw的文件的二进制GetPictureData="
+            // + GetPictureData().toString());
+            Log.i("geek", "本地的raw的文件的二进制byteArray=" + byteArray.toString());
+            String saveDir = Environment.getExternalStorageDirectory() + "/liangPic";
+            File dir = new File(saveDir);
+            if (!dir.exists()) {
+                dir.mkdirs(); // 创建文件夹
+            }
+            String fileName = saveDir + "/" + System.currentTimeMillis() + ".jpg";
+            file = new File(fileName);
+            file.delete();
+            if (!file.exists()) {
+                file.createNewFile();// 创建文件
+                Log.i("PicDir", file.getPath());
+                // Toast.makeText(PersonalEditUserInfo.this, fileName + "保存成功",
+                // 1000).show();
+            }
+            Log.i("PicDir", file.getPath());
+            // 将字节数组写入到刚创建的图片文件中
+            fos = new FileOutputStream(file);
+            bos = new BufferedOutputStream(fos);
+            bos.write(byteArray);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        } finally {
+            if (baos != null) {
+                try {
+                    baos.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            if (bos != null) {
+                try {
+                    bos.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            return file;
+        }
+
+    }
+
 }

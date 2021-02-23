@@ -11,7 +11,7 @@
         android:id="@+id/chapter_toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
+        android:background="@color/backcolor"
         android:elevation="4dp"
         android:theme="?attr/toolbarTheme"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
@@ -26,18 +26,18 @@
             android:textSize="20sp" />
 
     </androidx.appcompat.widget.Toolbar>
-
+    <!--章节目录和回收站切换的TabLayout-->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/chapter_tabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:tabBackground="@color/t"
+        app:tabBackground="@color/backblue"
         app:tabGravity="fill"
-        app:tabIndicatorColor="@color/colorAccent"
+        app:tabIndicatorColor="@color/black"
         app:tabMaxWidth="0dp"
         app:tabMode="fixed"
-        app:tabSelectedTextColor="@color/colorPrimary"
-        app:tabTextColor="@color/colorPrimary" />
+        app:tabSelectedTextColor="@color/black"
+        app:tabTextColor="@color/white" />
 
     <androidx.viewpager.widget.ViewPager
         android:id="@+id/chapter_viewpager"
