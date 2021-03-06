@@ -2,7 +2,10 @@ package com.chenyou.noveleditor.activity;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -42,6 +45,8 @@ public class SplashActivity extends AppCompatActivity {
         //初始化布局
         initview();
     }
+
+
 
     private void initview() {
         splash_btn = (Button) findViewById(R.id.splash_btn);
