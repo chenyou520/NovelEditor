@@ -19,6 +19,7 @@ import com.chenyou.noveleditor.activity.EditActivity;
 import com.chenyou.noveleditor.utils.Utils;
 
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -88,11 +89,15 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
         } else {
             viewHolder = (ViewHolder) convertView.getTag();
         }
+
         File file = chapters.get(position);
-        String nameNoEx = getFileNameNoEx(file.getName());
-        viewHolder.chapter_name.setText(nameNoEx);
         int words = analysis(file);
         viewHolder.chapter_number_words.setText("字数：" + words);
+
+        String nameNoEx = getFileNameNoEx(file.getName());
+        viewHolder.chapter_name.setText(nameNoEx);
+
+
         return convertView;
     }
 
@@ -187,10 +192,15 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
         assert files != null;
         chapters = new ArrayList<>(Arrays.asList(files));
         //排序
+
         Collections.sort(chapters, new Comparator<File>() {
             @Override
             public int compare(File o1, File o2) {
-                return o2.getName().compareTo(o1.getName());
+                if (o1.isDirectory() && o2.isFile())
+                    return -1;
+                if (o1.isFile() && o2.isDirectory())
+                    return 1;
+                return o1.getName().compareTo(o2.getName());
             }
         });
 
@@ -222,12 +232,11 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
      * @param file
      */
     private void writeTxtToFile(File file) {
-
         FileOutputStream fileOutputStream;
         BufferedWriter bufferedWriter;
         try {
             fileOutputStream = new FileOutputStream(file);
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(fileOutputStream, "utf-8"));//将输入流写入缓存,指定格式为 "utf-8"
+            bufferedWriter = new BufferedWriter(new OutputStreamWriter(fileOutputStream, "unicode"));//将输入流写入缓存,指定格式为 "unicode"
             bufferedWriter.write(chaptercontent);//写入内容
             bufferedWriter.close();
         } catch (FileNotFoundException e) {
@@ -245,19 +254,51 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
      */
     private String readTxtToFile(File file) {
         FileInputStream fileInputStream;
-        BufferedReader bufferedReader;
-        StringBuilder stringBuilder = new StringBuilder();
+        BufferedReader reader;
+        String text = "";
         if (!file.exists()) {
             return null;
         } else {
             try {
                 fileInputStream = new FileInputStream(file);
-                bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream, "utf-8"));//指定格式为 "utf-8"
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(line);
+                BufferedInputStream in = new BufferedInputStream(fileInputStream);
+                in.mark(4);
+                byte[] first3bytes = new byte[3];
+                in.read(first3bytes);//找到文档的前三个字节并自动判断文档类型。
+                in.reset();
+                if (first3bytes[0] == (byte) 0xEF && first3bytes[1] == (byte) 0xBB
+                        && first3bytes[2] == (byte) 0xBF) {// utf-8
+
+                    reader = new BufferedReader(new InputStreamReader(in, "utf-8"));
+
+                } else if (first3bytes[0] == (byte) 0xFF
+                        && first3bytes[1] == (byte) 0xFE) {
+
+                    reader = new BufferedReader(
+                            new InputStreamReader(in, "unicode"));
+                } else if (first3bytes[0] == (byte) 0xFE
+                        && first3bytes[1] == (byte) 0xFF) {
+
+                    reader = new BufferedReader(new InputStreamReader(in,
+                            "utf-16be"));
+                } else if (first3bytes[0] == (byte) 0xFF
+                        && first3bytes[1] == (byte) 0xFF) {
+
+                    reader = new BufferedReader(new InputStreamReader(in,
+                            "utf-16le"));
+                } else {
+
+                    reader = new BufferedReader(new InputStreamReader(in, "GBK"));
                 }
-                bufferedReader.close();
+
+                String str = reader.readLine();
+
+                while (str != null) {
+                    text = text + str+"\n";
+                    str = reader.readLine();
+
+                }
+                reader.close();
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
                 return null;
@@ -266,7 +307,7 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
                 return null;
             }
         }
-        return stringBuilder.toString();
+        return text;
     }
 
     /**
@@ -329,7 +370,7 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
                             }
                         }
                     }
-                    sum = character + chineselenght - spaces;//总字数=字母数+汉字数和符号数-空格数
+                    sum = (character + chineselenght)/2 - spaces;//总字数=字母数+汉字数和符号数-空格数
                     //关闭文件
                     br.close();
                 }
@@ -337,7 +378,6 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return sum;
     }
 }

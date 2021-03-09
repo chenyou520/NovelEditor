@@ -32,6 +32,7 @@ import com.chenyou.noveleditor.pager.SetPopuWindow;
 import com.chenyou.noveleditor.utils.PerformEdit;
 import com.chenyou.noveleditor.utils.Utils;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -104,7 +105,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
                     break;
             }
             removeMessages(AUTO_SAVE);
-            sendEmptyMessageDelayed(AUTO_SAVE, 10000);//10秒自动保存一次
+            sendEmptyMessageDelayed(AUTO_SAVE, 20000);//20秒自动保存一次
         }
     };
 
@@ -204,7 +205,17 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         openChapter();
         //章节内容改变监听，内含自动计数和设置撤销操作动作
         editcontChanged();
+        //enter键自动换行，并空自动空二格，实现文字自动排版
+        enterKeyAutotype();
+
+    }
+
+    /**
+     * enter键自动换行，并空自动空二格，实现文字自动排版
+     */
+    private void enterKeyAutotype() {
         editContent.setOnKeyListener(new MyOnKeyListener());
+        autoTypeset();
     }
 
     /**
@@ -278,8 +289,9 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         //去除字符串中的所有空格
         String str = editContent.getText().toString();
         String str2 = str.replaceAll(" ", "");
-        str2 = str2.replaceAll("(?m)^\\s*$(\\n|\\r\\n)", "");
-        str2 = str2.replaceAll("\r\n", "\r\n    ");
+//        str2 = str2.replaceAll("(?m)^\\s*$(\\n|\\r\\n)", "");
+        str2 = str2.replaceAll("\t", "");
+        str2 = str2.replaceAll("\n", "\n    ");
         editContent.setText("    " + str2);
     }
 
@@ -452,17 +464,26 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
             old_file = new File(filepath + "/" + str);//获取文件
             words = analysis(old_file);//获取总字数
             old_chaptername = getFileNameNoEx(str);//获取标题
-            old_chaptercontent = readTxtToFile(old_file);//获取内容
+            old_chaptercontent = readTxtToFile(old_file);//获取内容并转码
             editName.setText(old_chaptername);//显示标题
             editContent.setText(old_chaptercontent);//显示内容
             editNumber.setText("字数：" + words);//显示字数
             performEdit.setDefultText(old_chaptercontent);//将内容设置为不可操作的初始值
             //排除写入的错版
-            String string = editContent.getText().toString();
-            String str2 = string.replaceAll("    ", "\r\n    ");
-            editContent.setText("    " + str2);
+            autoTypeset();
             typeSetting();//排版
         }
+    }
+
+    /**
+     * 替换空格，回车自动空4格
+     */
+    private void autoTypeset() {
+        String text = editContent.getText().toString().trim();
+        text = text.replaceAll(" ", "");
+        text = text.replaceAll("\t", "");
+//        text = text.replaceAll("\n", "\n    ");
+        editContent.setText("    " + text);
     }
 
     /**
@@ -496,7 +517,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         BufferedWriter bufferedWriter;
         try {
             fileOutputStream = new FileOutputStream(file);
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(fileOutputStream, "utf-8"));//将输入流写入缓存,指定格式为 "utf-8"
+            bufferedWriter = new BufferedWriter(new OutputStreamWriter(fileOutputStream, "unicode"));//将输入流写入缓存,指定格式为 "unicode"
             bufferedWriter.write(chaptercontent);//写入内容
             bufferedWriter.close();
         } catch (FileNotFoundException e) {
@@ -507,26 +528,57 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     /**
-     * 读取章节文件
-     *
+     * 读取章节文件并转码
      * @param file
      * @return
      */
     private String readTxtToFile(File file) {
         FileInputStream fileInputStream;
-        BufferedReader bufferedReader;
-        StringBuilder stringBuilder = new StringBuilder();
+        BufferedReader reader;
+        String text = "";
         if (!file.exists()) {
             return null;
         } else {
             try {
                 fileInputStream = new FileInputStream(file);
-                bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream, "utf-8"));//指定格式为 "utf-8"
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(line);
+                BufferedInputStream in = new BufferedInputStream(fileInputStream);
+                in.mark(4);
+                byte[] first3bytes = new byte[3];
+                in.read(first3bytes);//找到文档的前三个字节并自动判断文档类型。
+                in.reset();
+                if (first3bytes[0] == (byte) 0xEF && first3bytes[1] == (byte) 0xBB
+                        && first3bytes[2] == (byte) 0xBF) {// utf-8
+
+                    reader = new BufferedReader(new InputStreamReader(in, "utf-8"));
+
+                } else if (first3bytes[0] == (byte) 0xFF
+                        && first3bytes[1] == (byte) 0xFE) {
+
+                    reader = new BufferedReader(
+                            new InputStreamReader(in, "unicode"));
+                } else if (first3bytes[0] == (byte) 0xFE
+                        && first3bytes[1] == (byte) 0xFF) {
+
+                    reader = new BufferedReader(new InputStreamReader(in,
+                            "utf-16be"));
+                } else if (first3bytes[0] == (byte) 0xFF
+                        && first3bytes[1] == (byte) 0xFF) {
+
+                    reader = new BufferedReader(new InputStreamReader(in,
+                            "utf-16le"));
+                } else {
+
+                    reader = new BufferedReader(new InputStreamReader(in, "GBK"));
                 }
-                bufferedReader.close();
+
+                String str = reader.readLine();
+
+                while (str != null) {
+                    text = text + str+"\n";
+                    str = reader.readLine();
+
+                }
+                reader.close();
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
                 return null;
@@ -535,8 +587,9 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
                 return null;
             }
         }
-        return stringBuilder.toString();
+        return text;
     }
+
 
     /**
      * 去除后缀
@@ -819,7 +872,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
                 return true;
             }
             return false;
-
         }
     }
+
 }
