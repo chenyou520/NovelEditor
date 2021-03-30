@@ -313,7 +313,7 @@ public class ChapterActivity extends AppCompatActivity implements TabLayout.Base
     }
 
     /**
-     * 当Tab的item被选中时
+     * 当Tab的item被选中时，发送广播通知更新
      *
      * @param tab
      */

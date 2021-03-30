@@ -1,2 +1,2 @@
-include ':app', ':sliderfont',  ':promptview', ':popuwindrow', ':textselectmodetest'
+include ':app', ':sliderfont',  ':promptview', ':popuwindrow', ':textselectmodetest', ':banbengupdate'
 rootProject.name='NovelEditor'

@@ -35,6 +35,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
 
@@ -43,6 +46,8 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
     private List<File> chapters;//存放书籍章节的列表
     private String chaptercontent;//章节的内容
     private Utils utils;
+    private int tempnNumi;//用于记录数据
+    private int tempnNumj;//用于记录数据
 
     public ChapterAdapter(View chapterLinearLayout, Context context, String bookPath) {
         ListView chapterlist_listview = (ListView) chapterLinearLayout.findViewById(R.id.chapterlist_listview);
@@ -91,8 +96,9 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
         }
 
         File file = chapters.get(position);
-        int words = analysis(file);
-        viewHolder.chapter_number_words.setText("字数：" + words);
+        String s = readTxtToFile(file);
+        s = stringFilter(s);
+        viewHolder.chapter_number_words.setText("字数：" + s.length());
 
         String nameNoEx = getFileNameNoEx(file.getName());
         viewHolder.chapter_name.setText(nameNoEx);
@@ -191,16 +197,47 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
         //将所有章节文件添加到fileList中new ArrayList<>(Arrays.asList(otherUserFromArray));
         assert files != null;
         chapters = new ArrayList<>(Arrays.asList(files));
-        //排序
 
+        //排序
         Collections.sort(chapters, new Comparator<File>() {
             @Override
             public int compare(File o1, File o2) {
-                if (o1.isDirectory() && o2.isFile())
+                //对o1文件名截取第<xxx>章的做处理
+                String s1 = o1.getName();
+                s1 = s1.substring(1, s1.indexOf("章"));
+                if (s1 != null) {
+                    boolean numeric = isNumeric(s1);//判断是不是数字
+                    if (numeric) {
+                        tempnNumi = Integer.parseInt(s1);
+                    } else {
+                        char[] chars1 = s1.toCharArray();
+                        tempnNumi = ConverToDigit(chars1);//转化为数字
+                    }
+                }else{
+                    return o2.getName().compareTo(o1.getName());//按照文件名排序
+                }
+
+
+                //对o2文件名截取第<xxx>章的做处理
+                String s2 = o2.getName();
+                s2 = s2.substring(1, s2.indexOf("章"));
+                if (s2 != null) {
+                    boolean numeric = isNumeric(s2);//判断是不是数字
+                    if (numeric) {
+                        tempnNumj = Integer.parseInt(s2);
+                    } else {
+                        char[] chars2 = s2.toCharArray();
+                        tempnNumj = ConverToDigit(chars2);//转化为数字
+                    }
+                }else {
+                    return o2.getName().compareTo(o1.getName());//按照文件名排序
+                }
+
+                if (tempnNumi - tempnNumj > 0) {
                     return -1;
-                if (o1.isFile() && o2.isDirectory())
+                } else {
                     return 1;
-                return o1.getName().compareTo(o2.getName());
+                }
             }
         });
 
@@ -247,7 +284,37 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
     }
 
     /**
-     * 读取章节文件
+     * 去除后缀
+     *
+     * @param filename
+     * @return
+     */
+    private String getFileNameNoEx(String filename) {
+        if ((filename != null) && (filename.length() > 0)) {
+            int dot = filename.lastIndexOf('.');
+            if ((dot > -1) && (dot < (filename.length()))) {
+                return filename.substring(0, dot);
+            }
+        }
+        return filename;
+    }
+
+    /**
+     * 屏蔽空格回车等特殊字符
+     *
+     * @param str
+     * @return
+     * @throws PatternSyntaxException
+     */
+    public static String stringFilter(String str) throws PatternSyntaxException {
+        String regEx = "[/\\:*?<>|\"\n\t\r\\s]";
+        Pattern p = Pattern.compile(regEx);
+        Matcher m = p.matcher(str);
+        return m.replaceAll("");
+    }
+
+    /**
+     * 读取章节文件并转码
      *
      * @param file
      * @return
@@ -294,7 +361,7 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
                 String str = reader.readLine();
 
                 while (str != null) {
-                    text = text + str+"\n";
+                    text = text + str + "\n";
                     str = reader.readLine();
 
                 }
@@ -311,73 +378,112 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
     }
 
     /**
-     * 去除后缀
-     *
-     * @param filename
+     * 判断是否是数字
+     * @param str
      * @return
      */
-    private String getFileNameNoEx(String filename) {
-        if ((filename != null) && (filename.length() > 0)) {
-            int dot = filename.lastIndexOf('.');
-            if ((dot > -1) && (dot < (filename.length()))) {
-                return filename.substring(0, dot);
+    public static boolean isNumeric(String str) {
+        for (int i = 0; i < str.length(); i++) {
+            if (!Character.isDigit(str.charAt(i))) {
+                return false;
             }
         }
-        return filename;
+        return true;
+    }
+
+    /**
+     * 将中文数字转换成阿拉伯数字
+     *
+     * @param cnNumber
+     * @return
+     */
+    static int ConverToDigit(char[] cnNumber) {
+        int result = 0;
+        int temp = 0;
+        for (char c : cnNumber) {
+            int temp1 = ToDigit(c);
+            if (temp1 == 10000) {
+                result += temp;
+                result *= 10000;
+                temp = 0;
+            } else if (temp1 > 9) {
+                if (temp1 == 10 && temp == 0) temp = 1;
+                result += temp * temp1;
+                temp = 0;
+            } else temp = temp1;
+        }
+        result += temp;
+        return result;
     }
 
 
     /**
-     * 统计字数
+     * 将中文数字转换成阿拉伯数字
      *
-     * @param file
+     * @param cn
      * @return
      */
-    private int analysis(File file) {
-        String str = "";
-
-        int character = 0;//字母数
-        int sum = 0;//总字数
-        int chineselenght = 0;//汉字数
-        int spaces = 0;//空格数
-
-        FileInputStream fis = null;
-        BufferedReader br = null;
-        try {
-            //判断SD卡是否存在,并且是否具有读写权限
-            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                if (file.exists()) {//判断文件是否存在
-                    //打开文件输入流
-                    fis = new FileInputStream(file);
-                    //字符流写入了缓冲区
-                    br = new BufferedReader(new InputStreamReader(fis));
-
-                    while ((str = br.readLine()) != null) {//readLine()每次读取一行，转化为字符串，br.readLine()为null时，不执行
-
-                        char[] b = str.toCharArray();//将字符串对象中的字符转换为一个字符数组
-                        for (int i = 0; i < str.length(); i++) {
-                            if (b[i] == ' ') {//如果字符数组中包含空格，spaces自加1
-                                spaces++;//空格数
-                            }
-
-                            //中文及中文字符算两个字符,英文及英文字符算一个字符
-                            //这里是根据ACSII值进行判定的中英文，其中中文及中文符号的ACSII值都是大于128的
-                            char charAt = str.charAt(i);
-                            if (charAt <= 128) {
-                                character++;
-                            } else {
-                                chineselenght++;
-                            }
-                        }
-                    }
-                    sum = (character + chineselenght)/2 - spaces;//总字数=字母数+汉字数和符号数-空格数
-                    //关闭文件
-                    br.close();
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    static int ToDigit(char cn) {
+        int number = 0;
+        switch (cn) {
+            case '壹':
+            case '一':
+                number = 1;
+                break;
+            case '两':
+            case '贰':
+            case '二':
+                number = 2;
+                break;
+            case '叁':
+            case '三':
+                number = 3;
+                break;
+            case '肆':
+            case '四':
+                number = 4;
+                break;
+            case '伍':
+            case '五':
+                number = 5;
+                break;
+            case '陆':
+            case '六':
+                number = 6;
+                break;
+            case '柒':
+            case '七':
+                number = 7;
+                break;
+            case '捌':
+            case '八':
+                number = 8;
+                break;
+            case '玖':
+            case '九':
+                number = 9;
+                break;
+            case '拾':
+            case '十':
+                number = 10;
+                break;
+            case '佰':
+            case '百':
+                number = 100;
+                break;
+            case '仟':
+            case '千':
+                number = 1000;
+                break;
+            case '萬':
+            case '万':
+                number = 10000;
+                break;
+            case '零':
+            default:
+                number = 0;
+                break;
         }
-        return sum;
+        return number;
     }
 }

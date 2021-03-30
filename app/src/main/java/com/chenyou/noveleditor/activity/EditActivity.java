@@ -54,8 +54,6 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private static final int AUTO_SAVE = 1000;//自动保存标识
     private Intent getIntent;//从MainActivity获取消息
     private Intent intent = new Intent();//返回数据
-    private Intent intent2 = new Intent();//返回时间数据
-    private Utils utils = new Utils();
     private int openMode = 0;//编辑页面的入口请求码，mode=0则新建章节页面，mode=1则编辑章节页面
     private String old_chaptercontent = "";//读取的内容
     private String old_chaptername = "";//读取的标题
@@ -87,10 +85,8 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private int intlength;//章节内容实时字数（去除了特殊字符）
     private String chaptercontent;//章节内容
     private int endLength;//章节内容更改后的总字数
-    private int words;//获取的章节文件内容字数
     private int height;//底部标题栏高度
     private int mScreenWidth;//屏幕宽
-    private String time;//更新时间
 
     private SharedPreferences shared = null;
 
@@ -216,6 +212,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private void enterKeyAutotype() {
         editContent.setOnKeyListener(new MyOnKeyListener());
         autoTypeset();
+        typeSetting();
     }
 
     /**
@@ -290,6 +287,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         String str = editContent.getText().toString();
         String str2 = str.replaceAll(" ", "");
 //        str2 = str2.replaceAll("(?m)^\\s*$(\\n|\\r\\n)", "");
+        str2 = str2.replaceAll("\t", "");
         str2 = str2.replaceAll("\t", "");
         str2 = str2.replaceAll("\n", "\n    ");
         editContent.setText("    " + str2);
@@ -462,7 +460,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
         if (openMode == 1) {//打开已存在的章节
             String str = getIntent.getExtras().getString("chaptername");//获取文件路径
             old_file = new File(filepath + "/" + str);//获取文件
-            words = analysis(old_file);//获取总字数
+            int words = analysis(old_file);//获取总字数
             old_chaptername = getFileNameNoEx(str);//获取标题
             old_chaptercontent = readTxtToFile(old_file);//获取内容并转码
             editName.setText(old_chaptername);//显示标题
@@ -481,7 +479,7 @@ public class EditActivity extends AppCompatActivity implements View.OnClickListe
     private void autoTypeset() {
         String text = editContent.getText().toString().trim();
         text = text.replaceAll(" ", "");
-        text = text.replaceAll("\t", "");
+//        text = text.replaceAll("\t", "");
 //        text = text.replaceAll("\n", "\n    ");
         editContent.setText("    " + text);
     }
