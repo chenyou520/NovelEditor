@@ -3,3 +3,7 @@
 build
 *.iml
 /local.properties
+/textselectmodetest
+/popuwindrow
+/sliderfont
+/promptview
