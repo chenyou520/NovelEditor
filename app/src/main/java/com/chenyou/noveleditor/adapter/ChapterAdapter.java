@@ -233,6 +233,7 @@ public class ChapterAdapter extends BaseAdapter implements AdapterView.OnItemCli
                     return o2.getName().compareTo(o1.getName());//按照文件名排序
                 }
 
+                //按章节名大的在前排序
                 if (tempnNumi - tempnNumj > 0) {
                     return -1;
                 } else {
